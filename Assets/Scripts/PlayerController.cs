@@ -176,7 +176,7 @@ public class PlayerController : MonoBehaviour
     /// <summary>
     /// Метод для установки центра и высоты коллайдера для анимации кувырка
     /// </summary>
-    private void SetCollaiderForRoll()
+    private void AnimationEventRoll()
     {
         //Изменение высоты коллайдера для кувырка
         cc.height = ccHeightForRollAndJump;
