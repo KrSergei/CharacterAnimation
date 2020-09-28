@@ -2,6 +2,8 @@
 
 public class PlayerController : MonoBehaviour
 {
+    #region Поля
+
     public float FirstLine,                     //Указатель на позицию первой линии (линия номер 0)
                  LineDistance;                  //Расстояние между линиями
     public float PlayerSpeed = 5.0f,            //Скорость игрока
@@ -46,6 +48,7 @@ public class PlayerController : MonoBehaviour
 
     public bool isGround = false;
 
+    #endregion
 
     void Start()
     {
@@ -80,6 +83,7 @@ public class PlayerController : MonoBehaviour
         }
         Debug.DrawRay(transform.position, -Vector3.up, Color.black, 10f);
 
+
         if (!isInMovement)
         {
             if (directionSide != 0 || directionForward != 0)
@@ -93,7 +97,6 @@ public class PlayerController : MonoBehaviour
                     nameWorkedTrigger = "Jump";
                 if (directionForward < 0)
                     nameWorkedTrigger = "Roll";
-
                 //Определение вектора направления движения
                 if (directionSide != 0)
                 {
@@ -117,6 +120,12 @@ public class PlayerController : MonoBehaviour
                 //Установка триггера с именем nameWorkedTrigger
                 animator.SetTrigger(nameWorkedTrigger);
             }
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                nameWorkedTrigger = "Climb";
+                Climbing();
+            }
+            
         }
         //Задание движения персонажу
         runVector.z += PlayerSpeed;
@@ -151,7 +160,7 @@ public class PlayerController : MonoBehaviour
         //иначе chooseDistance = DistanceMovToSide
         if (directionForward != 0)
             chooseDistance = DistanceMoveToForward;
-         else
+        else
             chooseDistance = DistanceMovToSide;
 
         //Вычисление текущей скорости персонажа
@@ -173,8 +182,19 @@ public class PlayerController : MonoBehaviour
     //Добавление к вектору движения персонажа вектора прыжка по событию из анимации
     private void AnimationEventJump() => moveVector.y = JumpForce;
 
+
+    private void Climbing()
+    {
+        animator.SetTrigger(nameWorkedTrigger);
+        //Получение длины текущего проигрываеммой анимации
+        timeAnimationClip = animator.GetCurrentAnimatorStateInfo(0).length;
+
+        Debug.Log("runVector GRV = " + runVector);
+    }
+
+
     /// <summary>
-    /// Метод для установки центра и высоты коллайдера для анимации кувырка
+    /// Метод для установки центра и высоты коллайдера для анимации кувырка. Вызывается по событию в анимации кувырка
     /// </summary>
     private void AnimationEventRoll()
     {
@@ -185,7 +205,7 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Метод для установки центра и высоты коллайдера для анимации прыжка
+    /// Метод для установки центра и высоты коллайдера для анимации прыжка. Вызывается по событию в анимации прыжка
     /// </summary>
     private void SetCollaiderForJump()
     {
@@ -196,7 +216,7 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Метод для сброса центра и высоты коллайдера после анимации кувырка
+    /// Метод для сброса центра и высоты коллайдера после анимации кувырка. Вызывается по событию в анимации
     /// </summary>
     private void SetNormalCollaider()
     {
