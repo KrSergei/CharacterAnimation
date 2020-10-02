@@ -7,12 +7,14 @@ public class PlayerController : MonoBehaviour
     public float FirstLine,                     //Указатель на позицию первой линии (линия номер 0)
                  LineDistance;                  //Расстояние между линиями
     public float PlayerSpeed = 5.0f,            //Скорость игрока
-                 DistanceMovToSide = 3f,             //Расстояние, которое проходит игрок за одну анимацию кувырка в сторону
-                 DistanceMoveToForward = 10f,    //Расстояние, которое проходит игрок за одну анимацию кувырка или прыжка по ходу движения
-                 JumpForce = 1f,                //Скорость прыжка
                  DistanceGround,                //Дистанция луча hit, которая указывает, что игрок находится на поверхности
-                 GravytyForce;                  //Показатель силы гравитации
-
+                 GravytyForce,                  //Показатель силы гравитации
+                 DistanceMovToSide = 3f,        //Расстояние, которое проходит игрок за одну анимацию кувырка в сторону
+                 DistanceMoveToForward = 10f,   //Расстояние, которое проходит игрок за одну анимацию кувырка или прыжка по ходу движения
+                 ClimbingDistance,              //Расстояние перемещеиния при взбирании на вертикальную поверхность
+                 JumpForce,                     //Сила прыжка
+                 JumpClimbForce;                //Сила прыжка при анимации взбирания на стену
+                 
 
     private Animator animator;
     private CharacterController cc;
@@ -22,7 +24,8 @@ public class PlayerController : MonoBehaviour
 
     private Vector3 ccCenterNorm = new Vector3(0, .91f, 0),             //Вектор центра коллайдера контроллера по умоланию          
                     ccCenterRoll = new Vector3(0, .19f, 0),             //Вектор центра коллайдера контроллера при анимации кувырка
-                    ccCenterJump = new Vector3(0, 1.6f, 0);             //Вектор центра коллайдера контроллера при анимации прыжка
+                    ccCenterJump = new Vector3(0, 1.6f, 0),             //Вектор центра коллайдера контроллера при анимации прыжка
+                    ccCenterClimb  = new Vector3(0, 2.6f, 0.33f);        //Вектор центра коллайдера контроллера при анимации взбирания на землю
 
     private RaycastHit hit;
 
@@ -33,10 +36,13 @@ public class PlayerController : MonoBehaviour
                   tmpDist,                      //Дистанция, пройденная за один кадр анимации 
                   chooseDistance;               //Показатель дистанции, на которую необходимо передвинуть персонажа в зависимости от выбранного направления
 
-    public bool isInMovement = false;           //Указатель состояния выполнения анимации
+    public bool IsInMovement = false,           //Указатель состояния выполнения анимации
+                IsGround = false,
+                IsClimbing = false;
 
     private float directionSide,                //Направление управления влево-вправо
-                  directionForward;             //Направление управления вниз-вверх
+                  directionForward,             //Направление управления вниз-вверх
+                  currentJumpForce;             //Текущий показатель силы прыжка в зависимости от анимации
 
     private string nameWorkedTrigger;
 
@@ -46,7 +52,7 @@ public class PlayerController : MonoBehaviour
     private int lineNumber = 1,                 //Указатель номера линии на которой находится игрок, вначале игры на линии №1
                 linesCount = 2;                 //Количество линий, всего три линии (с номерами 0, 1 и 2)
 
-    public bool isGround = false;
+
 
     #endregion
 
@@ -58,7 +64,6 @@ public class PlayerController : MonoBehaviour
         cc = GetComponent<CharacterController>();
         //Определение вектора движения
         runVector = Vector3.forward;
-        gravity = Vector3.zero;
     }
 
     void Update()
@@ -67,36 +72,52 @@ public class PlayerController : MonoBehaviour
         Ray ray = new Ray(transform.position, -Vector3.up);
         Physics.Raycast(ray, out hit);
 
+
         //Определение высоты игрока, если дистанция луча меньше либо равна расстоянию distanceGround, то isGround = true, иначе isGround = false
         if (hit.distance <= DistanceGround)
         {
-            isGround = true;
+            IsGround = true;
             gravity = Vector3.zero;
             directionSide = Input.GetAxisRaw("Horizontal");
             directionForward = Input.GetAxisRaw("Vertical");
-
         }
         else
         {
-            isGround = false;
+            IsGround = false;
             gravity = Physics.gravity * Time.deltaTime * GravytyForce;
         }
-        Debug.DrawRay(transform.position, -Vector3.up, Color.black, 10f);
 
+        //Debug.DrawRay(transform.position, -Vector3.up, Color.black, 10f);
 
-        if (!isInMovement)
+        if (!IsInMovement)
         {
             if (directionSide != 0 || directionForward != 0)
             {
-                isInMovement = true;
+                IsInMovement = true;
                 if (directionSide < 0)
                     nameWorkedTrigger = "Left";
                 if (directionSide > 0)
                     nameWorkedTrigger = "Right";
-                if (directionForward > 0)
-                    nameWorkedTrigger = "Jump";
                 if (directionForward < 0)
                     nameWorkedTrigger = "Roll";
+                //Если при directionForward > 0 и IsClimbing = true, установка переменной nameWorkedTrigger для проигрывания анимации взбирания на стену
+                //установка силы прыжка и расстояние перемещения при анимации взбирания на стену
+                if (directionForward > 0 && IsClimbing)
+                {
+                    nameWorkedTrigger = "Climb";
+                    currentJumpForce = JumpClimbForce;
+                    currentDistance = ClimbingDistance;
+                    //Возврат флага IsClimbing = false
+                    //IsClimbing = false;
+                                    }
+                else if(directionForward > 0)
+                {
+                    currentJumpForce = JumpForce;
+                    //Установка текущей дистанции равной длине перемещения для анимации прыжка
+                    currentDistance = DistanceMoveToForward;
+                    nameWorkedTrigger = "Jump";
+                }
+
                 //Определение вектора направления движения
                 if (directionSide != 0)
                 {
@@ -110,22 +131,20 @@ public class PlayerController : MonoBehaviour
 
                 if (directionForward != 0)
                 {
+
                     //Установка направления движения по оси Z по модулю, что бы персонаж не двигался назад в случпе, если directionForward < 0
                     currentDirection = Mathf.Abs(directionForward);
-                    //Установка текущей пройденной дистанции игроком за время анимации равной длине перемещения
-                    currentDistance = DistanceMoveToForward;
+
+                    Debug.Log("Distance - " + currentDistance);
+
+                    Debug.Log("СurrentJumpForce - " + currentJumpForce);
+
                     //Установка вектора движения
                     moveVector = Vector3.forward;
                 }
                 //Установка триггера с именем nameWorkedTrigger
                 animator.SetTrigger(nameWorkedTrigger);
             }
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                nameWorkedTrigger = "Climb";
-                Climbing();
-            }
-            
         }
         //Задание движения персонажу
         runVector.z += PlayerSpeed;
@@ -133,11 +152,10 @@ public class PlayerController : MonoBehaviour
         runVector *= Time.deltaTime;
 
         //Вызом метода Move для выполения соответвующей анимации
-        if (isInMovement)
+        if (IsInMovement)
         {
             Move();
         }
-
         cc.Move(runVector);
     }
 
@@ -152,7 +170,7 @@ public class PlayerController : MonoBehaviour
         //Если текущая пройденная дистанция меньше, либо равна нулю, установка isInMovement = false и выходи из метода
         if (currentDistance <= 0)
         {
-            isInMovement = false;
+            IsInMovement = false;
             return;
         }
 
@@ -172,6 +190,7 @@ public class PlayerController : MonoBehaviour
         //Задание вектору движения гравитации
         moveVector += gravity;
 
+
         //Задание вектора движения в зависимости от текущего направления и пройденной дистанции 
         runVector = moveVector * currentDirection * tmpDist;
 
@@ -179,19 +198,8 @@ public class PlayerController : MonoBehaviour
         currentDistance -= tmpDist;
     }
 
-    //Добавление к вектору движения персонажа вектора прыжка по событию из анимации
-    private void AnimationEventJump() => moveVector.y = JumpForce;
-
-
-    private void Climbing()
-    {
-        animator.SetTrigger(nameWorkedTrigger);
-        //Получение длины текущего проигрываеммой анимации
-        timeAnimationClip = animator.GetCurrentAnimatorStateInfo(0).length;
-
-        Debug.Log("runVector GRV = " + runVector);
-    }
-
+    //Добавление к вектору движения персонажа текущую силу прыжка  по событию из анимации
+    private void AnimationEventJump() => moveVector.y = currentJumpForce;
 
     /// <summary>
     /// Метод для установки центра и высоты коллайдера для анимации кувырка. Вызывается по событию в анимации кувырка
@@ -215,6 +223,15 @@ public class PlayerController : MonoBehaviour
         cc.center = ccCenterJump;
     }
 
+    private void SetCollaiderForClimbp()
+    {
+        ////Изменение высоты коллайдера для прыжка
+        //cc.height = ccHeightForRollAndJump;
+        ////Изменение центра коллайдера для прыжка
+        cc.center = ccCenterClimb;
+    }
+
+
     /// <summary>
     /// Метод для сброса центра и высоты коллайдера после анимации кувырка. Вызывается по событию в анимации
     /// </summary>
@@ -230,9 +247,16 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void OnTriggerEnter(Collider col)
     {
+        if (col.CompareTag("FundamentBlock"))
+        {
+            IsClimbing = true;
+        }
+
         if (col.CompareTag("Wall"))
         {
             animator.SetTrigger("Death");
+            SetNormalCollaider();
+            PlayerSpeed = 0f;
         }
     }
 }
