@@ -204,7 +204,6 @@ public class PlayerController : MonoBehaviour
             runVector.z = 0;
             runVector.y += 2f;
             runVector *= Time.deltaTime;
-            //cc.Move(runVector);
         }
 
 
@@ -273,7 +272,10 @@ public class PlayerController : MonoBehaviour
         //Сброс центра и высоты коллайдера в нормальные знначения
         cc.height = ccHeightHorm;
         cc.center = ccCenterNorm;
+        isMovementClimbing = false;
     }
+
+
 
     /// <summary>
     /// Метод реализации столкновения игрока с препятсвием
