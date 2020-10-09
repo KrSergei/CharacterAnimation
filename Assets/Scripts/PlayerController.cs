@@ -4,12 +4,18 @@ public class PlayerController : MonoBehaviour
 {
     #region Поля
 
-    public Transform UpperRaycastSpot;          //Трансформ для позиции верхнего луча
+    public Transform UpperRaycastSpot,          //Трансформ для позиции верхнего луча
+                     IDLeftHand,                //Трансформ для позиции луча левой руки
+                     IDRightHand,               //Трансформ для позиции луча правой руки
+                     IDLeftFoot,                 //Трансформ для позиции луча ступни левой ноги
+                     IDRightFoot;                //Трансформ для позиции луча ступни правой ноги
 
 
+    //public Transform[] MoveSpotClimb;
 
-    public float FirstLine,                     //Указатель на позицию первой линии (линия номер 0)
-                 LineDistance;                  //Расстояние между линиями
+
+    //public float FirstLine,                     //Указатель на позицию первой линии (линия номер 0)
+    //             LineDistance;                  //Расстояние между линиями
     public float PlayerSpeed = 5.0f,            //Скорость игрока
                  DistanceGround,                //Дистанция луча hit, которая указывает, что игрок находится на поверхности
                  GravytyForce,                  //Показатель силы гравитации
@@ -22,6 +28,7 @@ public class PlayerController : MonoBehaviour
     public bool IsInMovement = false,           //Указатель состояния выполнения анимации
                 IsGround = false,
                 IsClimbing = false;
+
     public LayerMask LayerMaskGround,
                      LayerMaskWall;
 
@@ -34,8 +41,8 @@ public class PlayerController : MonoBehaviour
     private Vector3 ccCenterNorm = new Vector3(0, .91f, 0),             //Вектор центра коллайдера контроллера по умоланию          
                     ccCenterRoll = new Vector3(0, .19f, 0),             //Вектор центра коллайдера контроллера при анимации кувырка
                     ccCenterJump = new Vector3(0, 1.6f, 0),             //Вектор центра коллайдера контроллера при анимации прыжка
-                    ccCenterClimb = new Vector3(0, .91f, -0.2f);        //Вектор центра коллайдера контроллера при анимации взбирания на землю
-
+                    ccCenterClimb = new Vector3(0, .91f, 0.44f),        //Вектор центра коллайдера контроллера при анимации взбирания на землю
+                    ccCenterClibMiddle = new Vector3(0, 1.62f, 0.28f);
 
     private RaycastHit hitGround,
                        hitForward; 
@@ -57,8 +64,8 @@ public class PlayerController : MonoBehaviour
     private float ccHeightHorm = 1.91f,                   //Высота коллайдера контроллера по умолчанию
                   ccHeightForRollAndJump = .4f;           //Высота коллайдера контроллера при кувырке и прыжке 
 
-    private int lineNumber = 1,                 //Указатель номера линии на которой находится игрок, вначале игры на линии №1
-                linesCount = 2;                 //Количество линий, всего три линии (с номерами 0, 1 и 2)
+    //private int lineNumber = 1,                 //Указатель номера линии на которой находится игрок, вначале игры на линии №1
+    //            linesCount = 2;                 //Количество линий, всего три линии (с номерами 0, 1 и 2)
 
     private bool isMovementClimbing = false;
 
@@ -79,9 +86,14 @@ public class PlayerController : MonoBehaviour
     {
         //Направляем луч вниз, с позиции игрока 
         Ray rayGround = new Ray(transform.position, -Vector3.up);
-        Ray rayUpper = new Ray(UpperRaycastSpot.position, Vector3.forward);
+        Ray rayUpper = new Ray(UpperRaycastSpot.transform.position, Vector3.forward);
+
+
+        //Ray IDRightHand = new Ray();
         Physics.Raycast(rayGround, out hitGround, LayerMaskGround);
-        Physics.Raycast(rayUpper, out hitForward, LayerMaskWall);
+        bool canDoClimb = Physics.Raycast(rayUpper, out hitForward, 2f);
+
+
 
         //Определение высоты игрока, если дистанция луча меньше либо равна расстоянию distanceGround, то isGround = true, иначе isGround = false
         if (hitGround.distance <= DistanceGround)
@@ -97,10 +109,18 @@ public class PlayerController : MonoBehaviour
             gravity = Physics.gravity * Time.deltaTime * GravytyForce;
         }
 
-        if(hitForward.distance <= 3f)
+        if(canDoClimb)
+        {
             IsClimbing = true;
+        }
         else
+        {
             IsClimbing = false;
+        }
+
+        //Debug.DrawRay(UpperRaycastSpot.position, Vector3.forward, Color.red, 2f);
+        //Debug.DrawRay(IDLeftHand.position, Vector3.forward, Color.red, 2f);
+        Debug.DrawRay(IDRightFoot.position, Vector3.forward, Color.grey, 0.1f);
 
         if (!IsInMovement)
         {
@@ -112,8 +132,7 @@ public class PlayerController : MonoBehaviour
                 if (directionSide > 0)
                     nameWorkedTrigger = "Right";
                 if (directionForward < 0)
-                    nameWorkedTrigger = "Roll";
-
+                    nameWorkedTrigger = "Roll";                    
                 //Если при directionForward > 0 и IsClimbing = true, установка переменной nameWorkedTrigger для проигрывания анимации взбирания на стену
                 //установка силы прыжка и расстояние перемещения при анимации взбирания на стену
                 if (directionForward > 0 && IsClimbing)
@@ -161,15 +180,6 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        if (isMovementClimbing)
-        {
-            Debug.Log("Worked");
-            runVector.z = 0;
-            runVector.y += 2f;
-            runVector *= Time.deltaTime;
-            cc.Move(runVector);
-        }
-
         //Задание движения персонажу
         runVector.z += PlayerSpeed;
         runVector += gravity;
@@ -180,6 +190,7 @@ public class PlayerController : MonoBehaviour
         {
             Move();
         }
+
         cc.Move(runVector);
     }
 
@@ -256,12 +267,14 @@ public class PlayerController : MonoBehaviour
         cc.center = ccCenterJump;
     }
 
-    private void SetCollaiderForClimbp()
-    {
-        //Изменение центра коллайдера для прыжка
-        cc.center = ccCenterClimb;
-    }
+    //Изменение центра коллайдера для прыжка в начальную стадию анимации Climb
+    private void SetCollaiderForClimbp() => cc.center = ccCenterClimb;
 
+    //Изменение центра коллайдера для прыжка в стеднюю стадию анимации Climb
+    private void SetCollaiderForClimbpMiddleStage() {
+        cc.center = ccCenterClibMiddle;
+        PlayerSpeed = 0;
+    }
     private void AnimationEventActivationClimb() => isMovementClimbing = true;
 
     /// <summary>
@@ -272,9 +285,12 @@ public class PlayerController : MonoBehaviour
         //Сброс центра и высоты коллайдера в нормальные знначения
         cc.height = ccHeightHorm;
         cc.center = ccCenterNorm;
-        isMovementClimbing = false;
     }
 
+    private void AnimationEventOffClimbing()
+    {
+        isMovementClimbing = false;
+    }
 
 
     /// <summary>
