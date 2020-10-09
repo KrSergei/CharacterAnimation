@@ -206,7 +206,7 @@ public class PlayerController : MonoBehaviour
         if (currentDistance <= 0)
         {
             IsInMovement = false;
-            return;
+            return; 
         }
 
         if (isMovementClimbing)

@@ -1,18 +1,16 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class ClimbSpot : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    public Transform[] ClimbSpotsLocal;
 
-    // Update is called once per frame
-    void Update()
+    private Vector3[] ClimbSpotsGlobal;
+
+    private void Start()
     {
-        
+        for (int i = 0; i < ClimbSpotsLocal.Length; i++)
+        {
+            ClimbSpotsGlobal[i] = transform.TransformVector(ClimbSpotsLocal[i].position);
+        }
     }
 }
