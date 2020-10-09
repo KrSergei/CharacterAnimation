@@ -64,6 +64,8 @@ public class PlayerController : MonoBehaviour
     private float ccHeightHorm = 1.91f,                   //Высота коллайдера контроллера по умолчанию
                   ccHeightForRollAndJump = .4f;           //Высота коллайдера контроллера при кувырке и прыжке 
 
+    private int valueSpotClimb;
+
     //private int lineNumber = 1,                 //Указатель номера линии на которой находится игрок, вначале игры на линии №1
     //            linesCount = 2;                 //Количество линий, всего три линии (с номерами 0, 1 и 2)
 
@@ -112,10 +114,18 @@ public class PlayerController : MonoBehaviour
         if(canDoClimb)
         {
             IsClimbing = true;
+            if(hitForward.collider != null)
+            {
+                valueSpotClimb = hitForward.collider.gameObject.GetComponent<Transform>().GetComponentsInChildren<ClimbSpot>().Length;
+                
+                Debug.Log("valueSpotClimb - " + valueSpotClimb);
+            }
+            
         }
         else
         {
             IsClimbing = false;
+            valueSpotClimb = 0;
         }
 
         //Debug.DrawRay(UpperRaycastSpot.position, Vector3.forward, Color.red, 2f);
