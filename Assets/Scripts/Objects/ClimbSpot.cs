@@ -13,4 +13,9 @@ public class ClimbSpot : MonoBehaviour
             ClimbSpotsGlobal[i] = transform.TransformVector(ClimbSpotsLocal[i].position);
         }
     }
+
+    public Vector3 GetValueStepForClimb(int step)
+    {
+        return ClimbSpotsGlobal[step];
+    }
 }
